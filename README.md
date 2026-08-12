@@ -100,17 +100,3 @@ The raw flat file was normalized into a relational Star Schema for optimized ana
 * **Recommendation:** Implement a VIP Loyalty Program targeting the "Champions" and "Potential Loyalists" to protect the primary revenue stream.
 * **Insight:** Heavy discounts (15-20%) erode profit margins without generating enough volume to offset the loss.
 * **Recommendation:** Shift from percentage discounts to "Free Shipping over $X" thresholds to increase Average Order Value while protecting margins.
-* *(See `reports/business_insights.md` for the full list)*
-
----
-
-# 📄 Resume Section (ATS-Friendly)
-
-If you are adding this project to your resume, use these bullets:
-
-**Data Analyst | E-Commerce Customer Analytics & Retention Intelligence**
-* Engineered an automated Python ETL pipeline (Pandas, NumPy) to clean and normalize 500,000+ transactional records into a SQLite relational database, ensuring 100% data integrity for analysis.
-* Developed an RFM (Recency, Frequency, Monetary) segmentation model in Python, identifying that the top 20% of customers drove >50% of total revenue, leading to targeted retention campaign recommendations.
-* Authored 20+ advanced SQL queries (CTEs, Window Functions) to extract KPIs including Month-over-Month growth, repeat purchase rate, and cohort retention.
-* Conducted statistical hypothesis testing (SciPy) to analyze promotional impact, discovering that 20% discounts negatively impacted overall profit margins compared to 5% discounts.
-* Designed an interactive Power BI dashboard utilizing DAX and Star Schema modeling to present executive insights on product performance and customer churn.
