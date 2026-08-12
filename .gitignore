@@ -11,3 +11,8 @@ __pycache__/
 .env
 venv/
 env/
+
+# Private/Excluded files
+INTERVIEW_QUESTIONS.md
+powerbi/dashboard_instructions.md
+requirements.txt
