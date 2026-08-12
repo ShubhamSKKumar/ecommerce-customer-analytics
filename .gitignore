@@ -1,0 +1,13 @@
+# Data and Database files
+data/
+*.db
+
+# Python caches
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+
+# Virtual environments
+.env
+venv/
+env/
