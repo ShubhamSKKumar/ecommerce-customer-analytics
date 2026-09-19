@@ -155,7 +155,7 @@ def _load_rfm_data_cached(db_path, is_uploaded):
         conn = sqlite3.connect(db_path, check_same_thread=False)
         
     try:
-        return pd.read_sql("SELECT * FROM customer_segments", conn)
+        return pd.read_sql("SELECT customer_id AS CustomerID, Recency, Frequency, Monetary, Segment FROM customer_segments", conn)
     except Exception:
         return pd.DataFrame()
     finally:
