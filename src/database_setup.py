@@ -1,13 +1,11 @@
 import pandas as pd
 import sqlite3
 import os
-
+from src import config
 
 def create_database():
-    cleaned_data_path = os.path.join(
-        "data", "cleaned", "online_retail_features.csv"
-    )
-    db_path = os.path.join("ecommerce.db")
+    cleaned_data_path = config.FEATURES_CSV_PATH
+    db_path = config.DB_PATH
 
     if not os.path.exists(cleaned_data_path):
         print(
@@ -27,19 +25,7 @@ def create_database():
     print("Creating Customers table...")
     customers = df[["CustomerID", "Country"]].drop_duplicates(
         subset=["CustomerID"]
-    )
-    # Since we don't have age/gender, we'll just have ID and Country.
-    # To meet project requirements, we can generate synthetic demographic data for these existing customers.
-    import numpy as np
-
-    np.random.seed(42)
-    customers["gender"] = np.random.choice(
-        ["Male", "Female"], size=len(customers)
-    )
-    customers["age"] = np.random.randint(18, 70, size=len(customers))
-    customers["signup_date"] = (
-        df.groupby("CustomerID")["InvoiceDate"].min().values
-    )
+    ).copy()
 
     customers.rename(
         columns={"CustomerID": "customer_id", "Country": "country"},
@@ -54,19 +40,6 @@ def create_database():
     )
     # Sometimes one StockCode has multiple descriptions or prices, let's keep the latest or mode.
     products = products.groupby("StockCode").first().reset_index()
-    # Add synthetic product categories for depth
-    categories = [
-        "Electronics",
-        "Apparel",
-        "Home & Garden",
-        "Toys",
-        "Health & Beauty",
-    ]
-    products["category"] = np.random.choice(categories, size=len(products))
-    # Synthetic cost price to allow profit calculations (e.g., 40-70% margin)
-    products["cost_price"] = products["UnitPrice"] * np.random.uniform(
-        0.3, 0.6, size=len(products)
-    )
 
     products.rename(
         columns={
@@ -82,12 +55,7 @@ def create_database():
     print("Creating Orders table...")
     orders = df[
         ["InvoiceNo", "CustomerID", "InvoiceDate", "Country"]
-    ].drop_duplicates(subset=["InvoiceNo"])
-    # Add synthetic payment method
-    payment_methods = ["Credit Card", "PayPal", "Debit Card"]
-    orders["payment_method"] = np.random.choice(
-        payment_methods, size=len(orders)
-    )
+    ].drop_duplicates(subset=["InvoiceNo"]).copy()
 
     orders.rename(
         columns={
@@ -105,12 +73,6 @@ def create_database():
     order_items = df[
         ["InvoiceNo", "StockCode", "Quantity", "UnitPrice", "Revenue"]
     ].copy()
-    # Adding synthetic discount (0-20%)
-    order_items["discount"] = np.random.choice(
-        [0, 0.05, 0.1, 0.15, 0.2],
-        size=len(order_items),
-        p=[0.6, 0.1, 0.1, 0.1, 0.1],
-    )
 
     order_items.rename(
         columns={

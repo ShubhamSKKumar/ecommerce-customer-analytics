@@ -1,12 +1,11 @@
 import pandas as pd
 import os
 
+from src import config
 
 def clean_data():
-    raw_data_path = os.path.join("data", "raw", "online_retail.csv")
-    cleaned_data_path = os.path.join(
-        "data", "cleaned", "online_retail_cleaned.csv"
-    )
+    raw_data_path = config.RAW_CSV_PATH
+    cleaned_data_path = config.CLEANED_CSV_PATH
 
     if not os.path.exists(raw_data_path):
         print(

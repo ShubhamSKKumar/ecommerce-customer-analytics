@@ -21,11 +21,7 @@ FROM customers;
 SELECT ROUND(SUM(revenue) / COUNT(DISTINCT order_id), 2) AS average_order_value
 FROM order_items;
 
--- 5. Total Profit (Estimated)
--- Calculates total profit using synthetic cost_price.
-SELECT ROUND(SUM((oi.unit_price - p.cost_price) * oi.quantity), 2) AS total_profit
-FROM order_items oi
-JOIN products p ON oi.product_id = p.product_id;
+
 
 -- 6. Monthly Revenue
 -- Shows how revenue trends month over month.
@@ -50,15 +46,7 @@ GROUP BY c.customer_id
 ORDER BY total_spend DESC
 LIMIT 10;
 
--- 8. Top-performing Categories
--- Shows which product categories generate the most revenue.
-SELECT 
-    p.category, 
-    ROUND(SUM(oi.revenue), 2) AS category_revenue
-FROM products p
-JOIN order_items oi ON p.product_id = oi.product_id
-GROUP BY p.category
-ORDER BY category_revenue DESC;
+
 
 -- 9. Revenue by City/Country
 -- Analyzes geographical performance based on shipping country.
@@ -71,14 +59,4 @@ GROUP BY shipping_country
 ORDER BY total_revenue DESC
 LIMIT 10;
 
--- 10. Discount vs Profit Analysis
--- Examines if higher discounts correlate with lower overall profit margins.
-SELECT 
-    oi.discount,
-    COUNT(oi.order_id) as items_sold,
-    ROUND(SUM(oi.revenue), 2) AS total_revenue,
-    ROUND(SUM((oi.unit_price - p.cost_price) * oi.quantity), 2) AS total_profit
-FROM order_items oi
-JOIN products p ON oi.product_id = p.product_id
-GROUP BY oi.discount
-ORDER BY oi.discount;
+

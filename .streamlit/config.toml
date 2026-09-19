@@ -1,0 +1,18 @@
+[theme]
+# Use the light theme by default
+base = "light"
+
+# Professional accent color (Streamlit's default is red, using a professional blue instead)
+primaryColor = "#0068C9"
+
+# Clean light background
+backgroundColor = "#FFFFFF"
+
+# Slightly contrasting background for sidebar and secondary areas
+secondaryBackgroundColor = "#F0F2F6"
+
+# Dark, highly readable text
+textColor = "#262730"
+
+# Clean sans-serif font
+font = "sans serif"

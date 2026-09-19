@@ -1,14 +1,11 @@
 import os
 import pandas as pd
 
+from src import config
 
 def engineer_features():
-    cleaned_data_path = os.path.join(
-        "data", "cleaned", "online_retail_cleaned.csv"
-    )
-    engineered_data_path = os.path.join(
-        "data", "cleaned", "online_retail_features.csv"
-    )
+    cleaned_data_path = config.CLEANED_CSV_PATH
+    engineered_data_path = config.FEATURES_CSV_PATH
 
     if not os.path.exists(cleaned_data_path):
         print(f"Error: {cleaned_data_path} not found. Run data_cleaning.py")

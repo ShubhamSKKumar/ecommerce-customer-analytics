@@ -7,16 +7,16 @@ import warnings
 # Suppress openpyxl warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
+from src import config
 
 def download_and_extract_data():
     url = "https://archive.ics.uci.edu/static/public/352/online+retail.zip"
-    data_dir = os.path.join("data", "raw")
-    zip_path = os.path.join(data_dir, "online_retail.zip")
-    extracted_dir = os.path.join(data_dir, "extracted")
-    csv_path = os.path.join(data_dir, "online_retail.csv")
+    zip_path = os.path.join(config.RAW_DATA_DIR, "online_retail.zip")
+    extracted_dir = os.path.join(config.RAW_DATA_DIR, "extracted")
+    csv_path = config.RAW_CSV_PATH
 
     # Create directories if they don't exist
-    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(config.RAW_DATA_DIR, exist_ok=True)
     os.makedirs(extracted_dir, exist_ok=True)
 
     if os.path.exists(csv_path):

@@ -4,18 +4,13 @@
 
 CREATE TABLE IF NOT EXISTS customers (
     customer_id INTEGER PRIMARY KEY,
-    country VARCHAR(100),
-    gender VARCHAR(10),
-    age INTEGER,
-    signup_date DATETIME
+    country VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS products (
     product_id VARCHAR(50) PRIMARY KEY,
     product_name VARCHAR(255),
-    unit_price DECIMAL(10, 2),
-    category VARCHAR(50),
-    cost_price DECIMAL(10, 2)
+    unit_price DECIMAL(10, 2)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -23,7 +18,6 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_id INTEGER,
     order_date DATETIME,
     shipping_country VARCHAR(100),
-    payment_method VARCHAR(50),
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
@@ -33,7 +27,6 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity INTEGER,
     unit_price DECIMAL(10, 2),
     revenue DECIMAL(10, 2),
-    discount DECIMAL(4, 2),
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );

@@ -2,12 +2,11 @@ import pandas as pd
 import os
 import datetime as dt
 
+from src import config
 
 def calculate_rfm():
-    engineered_data_path = os.path.join(
-        "data", "cleaned", "online_retail_features.csv"
-    )
-    rfm_path = os.path.join("data", "cleaned", "customer_segments.csv")
+    engineered_data_path = config.FEATURES_CSV_PATH
+    rfm_path = config.SEGMENTS_CSV_PATH
 
     if not os.path.exists(engineered_data_path):
         print(f"Error: {engineered_data_path} not found.")
@@ -94,7 +93,7 @@ def calculate_rfm():
     # Also save it to the sqlite db
     import sqlite3
 
-    db_path = os.path.join("ecommerce.db")
+    db_path = config.DB_PATH
     print("Saving segments to SQLite database...")
     conn = sqlite3.connect(db_path)
     rfm.rename(columns={"CustomerID": "customer_id"}, inplace=True)
