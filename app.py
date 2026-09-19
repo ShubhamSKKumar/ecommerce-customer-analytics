@@ -5,6 +5,9 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 import sys
+import uuid
+import tempfile
+import urllib.parse
 
 # Add src to path so we can import from config and scripts
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -16,6 +19,61 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- SESSION STATE INITIALIZATION ---
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = str(uuid.uuid4())
+
+if "data_source_mode" not in st.session_state:
+    st.session_state["data_source_mode"] = "Demo Dataset"
+    
+if "uploaded_db_path" not in st.session_state:
+    st.session_state["uploaded_db_path"] = None
+
+def get_active_db_info():
+    if st.session_state["data_source_mode"] == "Upload Your Own SQLite Database" and st.session_state["uploaded_db_path"]:
+        return st.session_state["uploaded_db_path"], True
+    return config.DB_PATH, False
+
+REQUIRED_SCHEMA = {
+    "customers": ["customer_id", "country"],
+    "products": ["product_id", "product_name"],
+    "orders": ["order_id", "customer_id", "order_date", "shipping_country"],
+    "order_items": ["order_id", "product_id", "quantity", "unit_price", "revenue"],
+    "customer_segments": ["customer_id", "Recency", "Frequency", "Monetary", "Segment"]
+}
+
+def validate_database_schema(db_path):
+    db_uri = db_path.replace("\\", "/")
+    try:
+        conn = sqlite3.connect(f"file:{urllib.parse.quote(db_uri)}?mode=ro", uri=True)
+    except Exception as e:
+        return False, [], [], f"Connection failed: {str(e)}"
+        
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = [row[0] for row in cursor.fetchall()]
+    
+    missing_tables = []
+    missing_columns = []
+    
+    for req_table, req_cols in REQUIRED_SCHEMA.items():
+        if req_table not in tables:
+            missing_tables.append(req_table)
+            continue
+            
+        cursor.execute(f"PRAGMA table_info('{req_table}');")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        for req_col in req_cols:
+            if req_col not in columns:
+                missing_columns.append(f"{req_table}.{req_col}")
+                
+    conn.close()
+    
+    is_valid = len(missing_tables) == 0 and len(missing_columns) == 0
+    return is_valid, missing_tables, missing_columns, "Valid schema."
+
 
 # --- 1. INITIALIZATION LOGIC ---
 @st.cache_resource
@@ -71,18 +129,41 @@ def initialize_pipeline():
             placeholder.empty()
 
 # --- 2. DATA LOADING ---
-@st.cache_resource
-def get_db_connection():
-    return sqlite3.connect(config.DB_PATH, check_same_thread=False)
-
 @st.cache_data
+def _load_data_cached(query, db_path, is_uploaded):
+    if is_uploaded:
+        db_uri = db_path.replace("\\", "/")
+        conn = sqlite3.connect(f"file:{urllib.parse.quote(db_uri)}?mode=ro", uri=True, check_same_thread=False)
+    else:
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        
+    try:
+        return pd.read_sql(query, conn)
+    finally:
+        conn.close()
+
 def load_data(query):
-    conn = get_db_connection()
-    return pd.read_sql(query, conn)
+    db_path, is_uploaded = get_active_db_info()
+    return _load_data_cached(query, db_path, is_uploaded)
 
 @st.cache_data
+def _load_rfm_data_cached(db_path, is_uploaded):
+    if is_uploaded:
+        db_uri = db_path.replace("\\", "/")
+        conn = sqlite3.connect(f"file:{urllib.parse.quote(db_uri)}?mode=ro", uri=True, check_same_thread=False)
+    else:
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        
+    try:
+        return pd.read_sql("SELECT * FROM customer_segments", conn)
+    except Exception:
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
 def load_rfm_data():
-    return pd.read_csv(config.SEGMENTS_CSV_PATH)
+    db_path, is_uploaded = get_active_db_info()
+    return _load_rfm_data_cached(db_path, is_uploaded)
 
 # Run initialization
 initialize_pipeline()
@@ -105,7 +186,8 @@ with st.sidebar:
         "Customer Intelligence",
         "Product & Business Analytics",
         "Retention & Customer Behavior",
-        "SQL Analytics"
+        "SQL Analytics",
+        "🗄️ Data Explorer"
     ]
     selected_page = st.radio("Navigation", pages, label_visibility="collapsed")
     
@@ -560,6 +642,113 @@ FROM order_items;"""
         except Exception as e:
             st.error(f"Error executing query: {str(e)}")
 
+def page_data_explorer():
+    st.header("🗄️ Data Explorer")
+    st.markdown("Inspect the current database or upload your own compatible SQLite dataset.")
+    
+    st.subheader("Data Source")
+    
+    source_choice = st.radio(
+        "Select Database", 
+        ["Demo Dataset", "Upload Your Own SQLite Database"],
+        index=0 if st.session_state["data_source_mode"] == "Demo Dataset" else 1,
+        label_visibility="collapsed"
+    )
+    
+    if source_choice != st.session_state["data_source_mode"]:
+        st.session_state["data_source_mode"] = source_choice
+        st.rerun()
+        
+    if st.session_state["data_source_mode"] == "Upload Your Own SQLite Database":
+        uploaded_file = st.file_uploader("Upload SQLite database", type=["db", "sqlite", "sqlite3"])
+        
+        if uploaded_file is not None:
+            temp_db_path = os.path.join(tempfile.gettempdir(), f"ecommerce_uploaded_{st.session_state['session_id']}.db")
+            with open(temp_db_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+                
+            is_valid, missing_tables, missing_cols, msg = validate_database_schema(temp_db_path)
+            
+            if is_valid:
+                st.session_state["uploaded_db_path"] = temp_db_path
+                st.success("✅ Database is compatible and successfully loaded!")
+            else:
+                st.session_state["uploaded_db_path"] = None
+                st.error("❌ This SQLite database is not compatible with this dashboard.")
+                
+                if missing_tables:
+                    st.markdown("**Missing tables:**")
+                    for t in missing_tables:
+                        st.markdown(f"- `{t}`")
+                        
+                if missing_cols:
+                    st.markdown("**Missing columns:**")
+                    for c in missing_cols:
+                        st.markdown(f"- `{c}`")
+                
+                st.stop()
+        else:
+            st.session_state["uploaded_db_path"] = None
+            st.info("Please upload a database to continue.")
+            st.stop()
+            
+    # Show active DB info
+    db_path, is_uploaded = get_active_db_info()
+    
+    st.markdown("---")
+    st.subheader("Database Overview")
+    
+    st.markdown(f"**Database source:** {st.session_state['data_source_mode']}")
+    if is_uploaded:
+        st.markdown(f"**Database file name:** Uploaded Database")
+        db_uri = db_path.replace("\\", "/")
+        conn = sqlite3.connect(f"file:{urllib.parse.quote(db_uri)}?mode=ro", uri=True, check_same_thread=False)
+    else:
+        st.markdown(f"**Database file name:** `ecommerce.db`")
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = [row[0] for row in cursor.fetchall()]
+    
+    st.markdown(f"**Total Tables:** {len(tables)}")
+    
+    st.markdown("### Tables")
+    
+    table_stats = []
+    total_rows = 0
+    for t in tables:
+        cursor.execute(f'SELECT COUNT(*) FROM "{t}"')
+        row_count = cursor.fetchone()[0]
+        total_rows += row_count
+        cursor.execute(f'PRAGMA table_info("{t}")')
+        col_count = len(cursor.fetchall())
+        table_stats.append({"Table": t, "Rows": format_number(row_count), "Columns": col_count})
+        
+    st.markdown(f"**Total rows across tables:** {format_number(total_rows)}")
+    st.dataframe(pd.DataFrame(table_stats), use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    st.subheader("Table Explorer")
+    
+    if tables:
+        selected_table = st.selectbox("Select table to inspect", tables)
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            st.markdown("#### Schema")
+            schema_df = pd.read_sql(f'PRAGMA table_info("{selected_table}")', conn)
+            st.dataframe(schema_df[['name', 'type', 'notnull']], use_container_width=True, hide_index=True)
+            
+        with col2:
+            st.markdown("#### Preview")
+            preview_limit = st.selectbox("Rows to preview", [10, 50, 100], index=1)
+            preview_df = pd.read_sql(f'SELECT * FROM "{selected_table}" LIMIT {preview_limit}', conn)
+            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+            
+    conn.close()
+
 # --- 6. ROUTING ---
 if selected_page == "Executive Overview":
     page_executive_overview()
@@ -571,3 +760,5 @@ elif selected_page == "Retention & Customer Behavior":
     page_retention()
 elif selected_page == "SQL Analytics":
     page_sql_analytics()
+elif selected_page == "🗄️ Data Explorer":
+    page_data_explorer()

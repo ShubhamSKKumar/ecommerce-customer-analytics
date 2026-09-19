@@ -43,6 +43,7 @@ The project includes an interactive Streamlit dashboard with five analytical vie
 3. **Product & Business Analytics**: Top products by revenue, quantity, and order count with dynamic Top 10/20/50 controls.
 4. **Retention & Customer Behavior**: Repeat customers, one-time customers, recency distributions, inactive customers, at-risk customers, and retention analysis.
 5. **SQL Analytics**: Live SQL queries executed against the SQLite database with displayed query results.
+6. **Data Explorer**: Inspect the SQLite database structure, table schemas, row counts, and sample records. Allows users to upload their own compatible SQLite database to power the dashboard.
 
 ## 🖥️ Dashboard Preview
 
@@ -121,6 +122,22 @@ python src/feature_engineering.py
 python src/database_setup.py
 python src/rfm_segmentation.py
 ```
+
+## 🗄️ Data Explorer
+The application includes a Data Explorer that allows users to inspect the SQLite database structure, table schemas, row counts, and sample records.
+
+Users can also upload their own SQLite database.
+
+Compatible SQLite database required. The uploaded database must follow the application's required schema, including the `customer_segments` RFM table. Arbitrary SQLite databases are not supported.
+
+Required schema:
+- `customers` (`customer_id`, `country`)
+- `products` (`product_id`, `product_name`)
+- `orders` (`order_id`, `customer_id`, `order_date`, `shipping_country`)
+- `order_items` (`order_id`, `product_id`, `quantity`, `unit_price`, `revenue`)
+- `customer_segments` (`customer_id`, `Recency`, `Frequency`, `Monetary`, `Segment`)
+
+Uploaded SQLite databases are isolated to the current session and opened in read-only mode.
 
 ## ☁️ Deployment
 
